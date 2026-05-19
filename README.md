@@ -1,4 +1,4 @@
-# ESP-32_C3_SEN
+# ESP-32_C3_SEN   WORK IN PROGRESS
 XIAO ESP32-C3 based to measure temperature and humidity with DHT22, DS18B20 and a growing number of other sensors,
 
 It allows to measure DHT22, DS18B20 and thermocoppler via MAX6675 chip.
