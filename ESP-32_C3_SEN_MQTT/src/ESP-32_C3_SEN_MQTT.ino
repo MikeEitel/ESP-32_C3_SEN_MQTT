@@ -6,8 +6,8 @@
 // XIAO-ESP32-C3 pinout 
 // D0   GPIO2   A0/D0    =  2     Used for powering DHT to have it resetable
 // D1   GPIO3   A1/D1    =  3     Used for DHT data
-// D2   GPIO4   A2/D2    =  4     Not used 
-// D3   GPIO5   A3/D3    =  5     Chip select for 
+// D2   GPIO4   A2/D2    =  4     Used for DS18B20 sensors
+// D3   GPIO5   A3/D3    =  5     Chip select for tofl chips
 // D4   GPIO6   SDA/D4   =  6     Data for I2C Data
 // D5   GPIO7   SCL/D5   =  7     Clock for I2C Clock
 // D6   GPIO21  TX/D6    = 21     Not used
@@ -29,6 +29,7 @@
 #include <WiFi.h>
 //#include <SPI.h>
 #include <PubSubClient.h>
+#include <Wire.h>
 #include <Adafruit_Sensor.h>
 
 // Setup the background classes  
@@ -82,35 +83,79 @@ int tstatus = 0;                              // Status of Max6675 readout
 int dscounter = 1;                            // Helper to seperate DS18 sensors
 int dscounted = 0;                            // Readable value
 
+int numhum = 0;                               // Counter for existing humidity sensors
+int numtemp = 0;                              // Counter for existing temperatur sensors
+int numco2 = 0;                               // Counter for existing co2 sensors
+int numtvoc = 0;                              // Counter for existing tvoc sensors
+int numpress = 0;                             // Counter for existing presure sensors
+int numdist = 0;                              // Counter for existing distance sensors
+int numdeg = 0;                               // Counter for existing degree sensors
+
+float ENScortemp = -1;                        // Possible ENS160 correction via a measured temp
+float ENScorhum = -1;                         // Possible ENS160 correction via a measured humidity
+ 
 float hum = -1;                               // Measured humidity
 float temp = -1;                              // Measured temperature
-uint16_t co2 = -1;                            // Air co2 ppm
-uint16_t tvoc = -1;                           // Air quality
-uint16_t dist = -1;                           // Distance
-String qual = "";                             // Quality of measure
+uint16_t co2 = -1;                            // Measured air co2 ppm
+uint16_t tvoc = -1;                           // Measured air quality
+uint16_t dist = -1;                           // Measured distance
+float press = -1;                             // Measured pressure
+float angle = -1;                             // Measured angle
+String qual = "";                             // Quality of an measure
+
+
+//#include <MySensors.h>
 
 ///////////////////////////////////////////////////////// Sensors ///////////////////////////////////
 #if defined(enableDHT)                        // One wire based DHT temperatur and humidity sensors
   #include "MyDHTxx.h"
 #endif
-#if defined(enableDS)                        // One wire based DS temperatur  sensors
+#if defined(enableDS)                         // One wire based DS temperatur  sensors
   #include "MyDSx.h"
 #endif
-#if defined(enableAHT)                        // Temperatur and humidity sensor
-  #include "MyAHT10.h"
+#if defined(enableLM75)                       // Temperatur and humidity sensor
+  #include "MyLM75.h"
 #endif  
+#if defined(enableAHT)                        // Temperatur and humidity sensor
+  #include "MyAHT2x.h"
+#endif  
+#if defined(enableAGS10)                      // TVOC sensor via AGS10 board
+  #include "MyAGS10.h"
+ #endif  
 #if defined(enableCCS)                        // TVOC and C02 sensor via CJMCU-811 board
   #include "MyCCS811.h"
  #endif  
-#if defined(enableENS)                         // TVOC and C02 multigas sensor
+#if defined(enableSGP30)                      // TVOC and C02 multigas sensor
+  #include "MySGP30.h"
+#endif 
+#if defined(enableSHT31)                      // TVOC and C02 multigas sensor
+  #include "MySHT31.h"
+#endif 
+#if defined(enableENS)                        // TVOC and C02 multigas sensor
   #include "MyENS160.h"
 #endif  
-#if defined(enableVL53L0)                      // TOFL sensor ca. 40 - 500
-  #include "MyVL53L0.h"
+#if defined(enableBMP18)                      // Temperature and barometric pressure sensor
+  #include "MyBMP180.h"
 #endif
-#if defined(enableVL6180)                      // TOFL sensor ca. 40 - 255
+#if defined(enableBMP28)                      // Temperature and barometric pressure sensor
+  #include "MyBMP280.h"
+#endif
+#if defined(enableBME28)                      // Temperature, humidity and barometric pressure sensor
+  #include "MyBME280.h"
+#endif
+#if defined(enableVL53L0)                     // TOFL sensor ca. 40 - 500
+  #include "MyVL53L0X.h"
+#endif
+#if defined(enableVL6180)                     // TOFL sensor ca. 40 - 255
   #include "MyVL6180.h"
 #endif
+#if defined(enableMLX)                        // Touchless temp sensor
+  #include "MyMLX90614.h"
+#endif
+#if defined(enableAS56)                       // angle sensor 
+  #include "MyAS5600.h"
+#endif
+
 ///////////////////////////////////////////////////////// Sensors ///////////////////////////////////
 
 void setup_wifi() {
@@ -336,14 +381,38 @@ void readvalues() {
   #if defined(enableDS)           // Sensors reading DS
     readDS();   
   #endif                 
+  #if defined(enableLM75)
+    readLM75();                    // Sensor reading LM75
+  #endif  
   #if defined(enableAHT)
     readAHT();                    // Sensor reading AHT
   #endif
+  #if defined(enableMLX)
+    readMLX();                    // Sensor reading MLX
+  #endif 
+  #if defined(enableAGS10)
+    readAGS10();                  // Sensor reading AGS10
+  #endif
   #if defined(enableCCS)
-    readCCS();                    // Sensor reading tcov CCS
+    readCCS();                    // Sensor reading CSS811
   #endif
   #if defined(enableENS)
-    readENS();                    // Sensor reading tcov ENS
+    readENS();                    // Sensor reading ENS160
+  #endif   
+  #if defined(enableSGP30)
+    readSGP30();                  // Sensor reading SGP30
+  #endif   
+  #if defined(enableSHT31)
+    readSHT31();                  // Sensor reading SHT31
+  #endif  
+  #if defined(enableBMP18)
+    readBMP18();                  // Sensor reading BMP180
+  #endif
+  #if defined(enableBMP28)
+    readBMP28();                  // Sensor reading BMP280
+  #endif
+  #if defined(enableBME28)
+    readBME28();                  // Sensor reading BME280
   #endif
   #if defined(enableVL53L0)
     readVL53L0();                 // Sensor reading tofl VL53
@@ -351,7 +420,11 @@ void readvalues() {
   #if defined(enableVL6180)
     readVL6180();                 // Sensor reading tofl VL61
   #endif
+  #if defined(enableAS56)
+    readAS56();                   // Sensor reading angle AS5600
+  #endif
 }
+
 
 // Helper function for substring to hex conversion 
 int x2i(const char *s, int from_a, int to_b) {
@@ -365,17 +438,17 @@ int x2i(const char *s, int from_a, int to_b) {
 // XXXXXXXXXXXXXXXXXXXXXXXX PROGRAM  START XXXXXXXXXXXXXXXXXXXXXXX
 
 void setup() {
- // Initialize debug output and wifi and preset mqtt
- Serial.begin(115200);
- delay(1000);
- Serial.println("");
- Serial.println("");
- Serial.print("I am: ");
- Serial.print(iamclient);
- Serial.println("");
+  // Initialize debug output and wifi and preset mqtt
+  Serial.begin(115200);
+  delay(1000);
+  Serial.println("");
+  Serial.println("");
+  Serial.print("I am: ");
+  Serial.print(iamclient);
+  Serial.println("");
 
- setup_wifi(); // Start the wifi connection
- delay(100);
+  setup_wifi(); // Start the wifi connection
+  delay(100);
   #if defined(OTA)                                  
     setupOTA();                                     // Start OTA posibility
   #endif
@@ -387,7 +460,7 @@ void setup() {
   mqttclient.setSocketTimeout(63);  // MQTT_SOCKET_TIMEOUT: socket timeout interval in Seconds. Override setSocketTimeout()
   reconnect();                      // Start the mqtt connection would read first meassures with 0
   mqttclient.subscribe(in_topic);   // Listen to the mqtt inputs
- 
+
   #if defined(enableWire)
     Wire.begin(SDA, SCL);
     delay(500);
@@ -396,33 +469,61 @@ void setup() {
     for (uint8_t addr = 1; addr < 127; addr++) {
       Wire.beginTransmission(addr);
       if (Wire.endTransmission() == 0)
-        Serial.printf("Found device at 0x%02X\n", addr);
+        Serial.printf("Found I2C device at 0x%02X\n", addr);
 	  }
     #endif
   #endif
-
   
   #if defined(enableDHT)        // Initialize the DHT sensor
     startDHT();
   #endif
-  #if defined(enableDS)        // Initialize the DS sensors
+  #if defined(enableDS)         // Initialize the DS sensors
     startDS();
+  #endif
+  #if defined(enableLM75)       // Initialize the VL6180 sensor
+    startLM75();
+  #endif
+  #if defined(enableAHT)        // Initialize the AHT21 sensor
+    startAHT();
+  #endif
+  #if defined(enableMLX)        // Initialize the MLX90614 sensor
+    startMLX();
+  #endif
+  #if defined(enableAGS10)      // Initialize the AGS10 sensor
+    startAGS10();
   #endif
   #if defined(enableCCS)        // Initialize the CCS811 sensor
     startCSS();
   #endif
-    #if defined(enableAHT)      // Initialize the AHT21 sensor
-    startAHT();
-  #endif
-   #if defined(enableENS)       // Initialize the ENS160 sensor
+  #if defined(enableENS)        // Initialize the ENS160 sensor
     startENS();
+  #endif   
+  #if defined(enableSGP30)      // Initialize the SGP30 sensor
+    startSGP30();
+  #endif  
+  #if defined(enableSHT31)      // Initialize the SHT31 sensor
+    startSHT31();
+  #endif  
+  #if defined(enableBMP18)      // Initialize the ENS160 sensor
+    startBMP18();
+  #endif  
+  #if defined(enableBMP28)      // Initialize the ENS160 sensor
+    startBMP28();
+  #endif  
+  #if defined(enableBME28)      // Initialize the ENS160 sensor
+    startBME28();
   #endif
   #if defined(enableVL53L0)     // Initialize the VL53L0 sensor
     startVL53L0();
   #endif
-  #if defined(enableVL6180)    // Initialize the VL6180 sensor
+  #if defined(enableVL6180)     // Initialize the VL6180 sensor
     startVL6180();
   #endif
+  #if defined(enableAS56)
+    startAS56();                   // Sensor reading angle AS5600
+  #endif
+  Serial.printf("Sensors for Temp: %i, Humid: %i, Co2: %i, Tvoc: %i, Press: %i, Dist: %i, Angle: %i\n", numtemp, numhum, numco2, numtvoc, numpress, numdist, numdeg);
+  mqttclient.publish(out_sensors, (String(MySensors).c_str()), false);    // Send list of the usable sensors
 }
 
 //  This is the Main loop
@@ -478,13 +579,14 @@ void loop() {
         Serial.printf("Free Heap: %d\n\n", ESP.getFreeHeap());  
       #endif
       readvalues();
+/*
       Serial.println();
       #if defined(enableDHT)
         Serial.printf("T: %.1fC\tH: %0.f%%\t", temp, hum);
       #endif
       #if defined(enableDS)
         Serial.printf("T: %.1fC\t", temp);
-#endif
+      #endif
       #if defined(enableAHT)
         Serial.printf("T: %.1fC\tH: %0.f%%\t", temp, hum);
       #endif
@@ -501,6 +603,7 @@ void loop() {
         Serial.printf("Distance: %u\t", dist);
       #endif         
       Serial.printf("\n\n");    
+      */
     }
   }
   #if defined(TEST)

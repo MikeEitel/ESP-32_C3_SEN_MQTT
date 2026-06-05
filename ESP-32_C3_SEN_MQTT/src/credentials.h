@@ -37,23 +37,7 @@ IPAddress gateway(1,1,1,1);                // REPLACE !!!!
 #define out_sensors     iamclient "/sensors"            // This is a list of usable external sensors send to MQTT
 #define out_topic       iamclient "/loop"               // This helper debug variable can be send to MQTT
 #define mqtt_debug      iamclient "/debug"              // This is send to MQTT   Debug only
-#define mqtt_out_hum0   iamclient "/sen/hum/0"          // This is send to MQTT
-#define mqtt_out_hum1   iamclient "/sen/hum/1"          // This is send to MQTT
-#define mqtt_out_tem0   iamclient "/sen/temp/0"         // This is send to MQTT
-#define mqtt_out_tem1   iamclient "/sen/temp/1"         // This is send to MQTT
-#define mqtt_out_tem2   iamclient "/sen/temp/2"         // This is send to MQTT
-#define mqtt_out_tem3   iamclient "/sen/temp/3"         // This is send to MQTT
-#define mqtt_out_tem4   iamclient "/sen/temp/4"         // This is send to MQTT
-#define mqtt_out_tem5   iamclient "/sen/temp/5"         // This is send to MQTT
-#define mqtt_out_tem6   iamclient "/sen/temp/6"         // This is send to MQTT
-#define mqtt_out_tem7   iamclient "/sen/temp/7"         // This is send to MQTT
-#define mqtt_out_tem8   iamclient "/sen/temp/8"         // This is send to MQTT
-#define mqtt_out_tem9   iamclient "/sen/temp/9"         // This is send to MQTT
-#define mqtt_out_angle  iamclient "/sen/angle"          // Angle position is send to MQTT
-#define mqtt_out_co2    iamclient "/sen/co2"            // eCO2 air quality is send to MQTT
-#define mqtt_out_tvoc   iamclient "/sen/tvoc"           // TVOC air quality is send to MQTT
-#define mqtt_out_bmppr  iamclient "/sen/press"          // Air pressure is send to MQTT
-#define mqtt_out_dist   iamclient "/sen/dist"           // Distance is send to MQTT
+#define mqtt_out_sen    iamclient "/sen"                // This is a generic starter descriptor to send to MQTT 
 #define mqtt_out_qual   iamclient "/sen/qual"           // Measurement quality is send to MQTT
 
 // Errors send as values in test mode
@@ -72,19 +56,27 @@ IPAddress gateway(1,1,1,1);                // REPLACE !!!!
 // Allowed are:  DHT 11  or   DHT 12  or   DHT 22  (AM2302), AM2321   or   DHT 21 (AM2301)
 #define DHTtyp   DHT22                                  // See above
 
-#define enableDHT                                       // Enable DHT sensor      
-#define enableDS                                        // Enable DS sensors      
+#define enableDHT                                       // Enable DHT T&H sensor      
+#define enableDS                                        // Enable multiple DS18 T sensors      
+#define enableLM75                                      // Enable LM75 T sensor  
 #define enableAHT                                       // Enable AHT21 T&H sensor  
+#define enableSHT31                                     // Enable SHT31 T&H sensor  #define enableMLX                                       // Enable MLX90614 nontouch T sensor
+#define enableAGS10                                     // Enable AGS10 tvoc sensor  
 #define enableCCS                                       // Enable CCS811 tvoc sensor  
 #define enableENS                                       // Enable ENS160 tvoc sensor  
+//#define enableSGP30                                     // Enable SPG30 tvoc sensor  
+#define enableBMP18                                     // Enable BMP180 T & Baropress sensor  
+//#define enableBMP28   // EITHER BMP 280                 // Enable BMP280 T & Baropress sensor  
+#define enableBME28   // OR BME 280                     // Enable BME280 T&H & Baropress sensor  
 #define enableVL53L0                                    // Enable LV53L0X tofl sensor
-#define enableVL6180                                    // Enable VL6180X tofl sensor
+//#define enableVL6180                                    // Enable VL6180X tofl sensor
+#define enableAS56                                      // Enable AS5600 angle sensor
 
 
 float humDHTcorr =        0.0;                          // Humidity DHT sensor error correction
 float humAHTcorr =        0.0;                          // Humidity AHT sensor error correction
 float temDHTcorr =        0.0;                          // Temperatur DHT sensor error correction
-float temAHTcorr =       -6.0;                          // Temperatur AHT sensor error correction
+float temAHTcorr =        0.0;                          // Temperatur AHT sensor error correction
 
 // Constant how often the mqtt message is send
 #if defined(TEST)

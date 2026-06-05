@@ -1,19 +1,28 @@
+// Used pins 
+// GND            GND
+// DHT_POWER      XIAO-C3 board pin D0 to supply power to the DHT sensor
+// DHT_PIN        XIAO-C3 board pin D1 to connect data of DHT sensor
+
+int DTHmynumhum = 0;
+int DTHmynumtemp = 0;
+
 #include <DHT.h>                              // Standard library for DHT
 DHT dht(DHT_PIN,DHTtyp);                      // Allows to have different types of DHT's on "first channel"
-//#define maxspi_DELAY    7                   // in ca. microseconds 
-
 
 void startDHT(){
   // Power reset the DHT to conteract startup bug of some devices
   pinMode(DHT_POWER, OUTPUT);
   digitalWrite(DHT_POWER, LOW);
-  delay(100);
+  delay(500);
   digitalWrite(DHT_POWER, HIGH);                  // Initialize DHT by power on
   dht.begin();
-  MySensors = "DHT & "; 
+  MySensors = "DHT  "; 
+  numhum++; numtemp++;
+  DTHmynumhum = numhum;
+  DTHmynumtemp = numtemp;
 }
 
-void readDHT(){                                      
+void readDHT(){
   temp = dht.readTemperature();
   if (isnan(temp)){
     #if defined(TEST)
@@ -29,8 +38,11 @@ void readDHT(){
     }
   else{ 
     temp = temp + temDHTcorr;
-    mqttclient.publish(mqtt_out_tem0, String(temp).c_str(), false);
-    MySensors = MySensors + "DT";
+    // Publish temperature readings with unique MQTT topics per sensor
+    String numh = String(DTHmynumtemp -1);              // Starting mqtt at /0
+    String topic = String(mqtt_out_sen) + "/temp/" + numh;
+    mqttclient.publish(topic.c_str(), String(temp).c_str(), false);
+    MySensors += "DHT<t" + numh;
   }
 
   hum = dht.readHumidity();
@@ -53,8 +65,11 @@ void readDHT(){
     if (hum >= 100){
       hum = 100;
     }
-    mqttclient.publish(mqtt_out_hum0, String(hum).c_str(), false);
-    MySensors = MySensors + "H ";
+    // Publish temperature readings with unique MQTT topics per sensor
+    String numh = String(DTHmynumhum -1);              // Starting mqtt at /0
+    String topic = String(mqtt_out_sen) + "/hum/" + numh;
+    mqttclient.publish(topic.c_str(), String(hum).c_str(), false);
+    MySensors += "h" + numh + "> ";
   }
 
   #if defined(TEST)
