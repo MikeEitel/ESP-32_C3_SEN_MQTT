@@ -59,7 +59,7 @@ void readAHT(){
   String numh = String(ATHmynumtemp -1);              
   String topic = String(mqtt_out_sen) + "/temp/" + numh;
   mqttclient.publish(topic.c_str(), String(temp).c_str(), false);
-  MySensors += "AH<t" + numh;
+  MySensors += "AHT<t" + numh;
 
   // Publish humidity readings
   numh = String(ATHmynumhum -1);              

@@ -31,7 +31,7 @@ void readAGS10(){
   String numh = String(AGS10mynumtvoc -1);              
   String topic = String(mqtt_out_sen) + "/tvoc/" + numh;
   mqttclient.publish(topic.c_str(), String(tvoc).c_str(), false);
-  MySensors += "AG<tv" + numh + "> ";
+  MySensors += "AG<v" + numh + "> ";
   #if defined(TEST)
     Serial.printf("AGS10 TVOC: %i\n",tvoc);
   #endif

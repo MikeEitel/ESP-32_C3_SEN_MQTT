@@ -24,7 +24,7 @@ void startAS56(){
       #endif 
     }
     tried++; } 
-  while ((sensorReady <= 1) && (tried < 10));
+  while ((sensorReady != 0x36) && (tried < 10));
   if (sensorReady != 0x36 ){
     Serial.print("AS5600 ERROR\n");
     MySensors += "Error AS5600";} 
@@ -40,12 +40,22 @@ void startAS56(){
 }
 
 void readAS56(){
-  angle = as5600.getRawAngle() * 0.087890625;
-  #if defined(TEST)
-    Serial.printf("AS5600 Angle: %f deg with Magnitude: %f \n", angle,as5600.getMagnitude());
-  #endif
-  String numh = String(AS56mynumdeg - 1);              
-  String topic = String(mqtt_out_sen) + "/deg/" + numh;
-  mqttclient.publish(topic.c_str(), String(angle).c_str(), false);
-  MySensors += "AS56L<a" + numh+ "> ";
+  uint16_t mag = as5600.getMagnitude();
+  if (mag > 10 && mag < 4000){
+    angle = as5600.getRawAngle() * 0.087890625;
+    #if defined(TEST)
+      Serial.printf("AS5600 Angle: %f deg with Magnitude: %i \n", angle,mag);
+    #endif
+  //  Serial.println(as5600.getScaledAngle());
+    String numh = String(AS56mynumdeg - 1);              
+    String topic = String(mqtt_out_sen) + "/deg/" + numh;
+    mqttclient.publish(topic.c_str(), String(angle).c_str(), false);
+  MySensors += "AS56<a" + numh+ "> ";}
+  else{
+    String numh = String(AS56mynumdeg - 1);              
+    String topic = String(mqtt_out_sen) + "/deg/" + numh;
+    mqttclient.publish(topic.c_str(), "", false);  Serial.println("AS5600 measure ERROR!");
+    mqttclient.publish(out_status, "AS5600 ERROR" ,false);
+
+  }
 }

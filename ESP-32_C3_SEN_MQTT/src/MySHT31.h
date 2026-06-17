@@ -18,7 +18,9 @@ void startSHT31(){
   int tried = 0;
   do {
     status = sht.begin();
-    Serial.printf("SHT Status: %u \n",status);
+    #if defined(TEST)
+      Serial.printf("SHT Startstatus: %u \n",status);
+    #endif
     if (status != 1) delay(500);
       tried++;
   } while ((!status) && (tried < 10));
@@ -32,7 +34,9 @@ void startSHT31(){
     SHTmynumhum = numhum;
     MySensors += "SHT31  ";
   }
-  Serial.printf("SHT31 Status: %x\n", sht.readStatus());
+  #if defined(TEST)
+    Serial.printf("SHT31 Status: %x\n", sht.readStatus());
+  #endif  
 }
 
 void readSHT31(){

@@ -33,7 +33,7 @@ void startSGP30(){
     numco2++; numtvoc++;
     SGPmynumco2 = numco2;
     SGPmynumtvoc = numtvoc;
-    MySensors += "& SGP ";
+    MySensors += "SGP30  ";
   }
   sgp.initAirQuality();
 }
@@ -52,10 +52,10 @@ void readSGP30(){
     String numh = String(SGPmynumco2 -1);              
     String topic = String(mqtt_out_sen) + "/co2/" + numh;
     mqttclient.publish(topic.c_str(), String(co2).c_str(), false);
-    MySensors += "SGP.co" + numh;
+    MySensors += "SGP<co" + numh;
     numh = String(SGPmynumtvoc -1);              
     topic = String(mqtt_out_sen) + "/tvoc/" + numh;
     mqttclient.publish(topic.c_str(), String(tvoc).c_str(), false);
-    MySensors += ".tv" + numh + "- ";
+    MySensors += "tv" + numh + "> ";
   }
 }

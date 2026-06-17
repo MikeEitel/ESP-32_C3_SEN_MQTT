@@ -53,18 +53,18 @@ void readBME28(){
   String numh = String(BME28mynumtemp-1);              
   String topic = String(mqtt_out_sen) + "/temp/" + numh;
   mqttclient.publish(topic.c_str(), String(temp).c_str(), false);
-  MySensors += "BME280<t" + numh;
-
-  numh = String(BME28mynumpress-1);              
-  topic = String(mqtt_out_sen) + "/press/" + numh;
-  mqttclient.publish(topic.c_str(), String(press).c_str(), false);
-  MySensors += "p" + numh;
+  MySensors += "BE280<t" + numh;
 
   numh = String(BME28mynumhum-1);              
   topic = String(mqtt_out_sen) + "/hum/" + numh;
   mqttclient.publish(topic.c_str(), String(hum).c_str(), false);
-  
-  MySensors += "h" + numh + "> ";
+  MySensors += "h" + numh;
+
+  numh = String(BME28mynumpress-1);              
+  topic = String(mqtt_out_sen) + "/press/" + numh;
+  mqttclient.publish(topic.c_str(), String(press).c_str(), false);
+  MySensors += "p" + numh + "> ";
+
   #if defined(TEST)
     Serial.printf("BME280 Temp: %f C & Humid: %f %% & Press: %f mbar\n", temp, hum, press);
   #endif 

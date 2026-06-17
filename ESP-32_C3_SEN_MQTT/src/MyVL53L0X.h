@@ -12,7 +12,7 @@ int VL53L0mynumdist = 0;
 
 
 Adafruit_VL53L0X lox = Adafruit_VL53L0X();
-//#define I2C_ADDRESS 29
+//#define I2C_ADDRESS 0x29
 
 void startVL53L0() {
   // XSHUT aktivieren
@@ -28,7 +28,7 @@ void startVL53L0() {
     #else
       status = lox.begin(VL53L0X_I2C_ADDR);
     #endif
-//    Serial.printf("ENS Status: %u \n",status);
+//    Serial.printf("VL53L0X Status: %u \n",status);
     if (status != true) delay(50);
       tried++;
   } while ((status != 1) && (tried < 10));
@@ -53,7 +53,7 @@ void startVL53L0() {
     lox.startRangeContinuous();;
     delay(500);
   #else
-    Serial.println("VL53L0X API Singleshot Ranging\n\n");
+    Serial.print("VL53L0X API Singleshot ranging\n");
     lox.startMeasurement();
   #endif
 }

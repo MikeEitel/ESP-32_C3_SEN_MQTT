@@ -21,7 +21,7 @@
 // D7   GPIO5   RX/D7/SS  = 20    Not used
 
 
-//#define Me     // If defined ( Me .. MeIOT .. LU ..  Rhy ) use private network for testing, otherwise use IOT standard
+#define Me     // If defined ( Me .. MeIOT .. LU ..  Rhy ) use private network for testing, otherwise use IOT standard
 //#define TEST    // Testmodus
 #define OTA       // If defined use OTA programming posibility
 
@@ -78,11 +78,12 @@ bool watchdog = true;                         // Signal via mqtt that device is 
 bool statusreset = false;                     // Used to minimize error 0 sendouts
 int looped = 1;                               // Loop counter as debug helper
 
-bool toomany = false;                         // Too many DS18 sensors connected
+//bool toomany = false;                         // Too many DS18 sensors connected
 int tstatus = 0;                              // Status of Max6675 readout
 int dscounter = 1;                            // Helper to seperate DS18 sensors
 int dscounted = 0;                            // Readable value
 
+int numsensors = 0;                           // Number of existing sensors
 int numhum = 0;                               // Counter for existing humidity sensors
 int numtemp = 0;                              // Counter for existing temperatur sensors
 int numco2 = 0;                               // Counter for existing co2 sensors
@@ -90,6 +91,9 @@ int numtvoc = 0;                              // Counter for existing tvoc senso
 int numpress = 0;                             // Counter for existing presure sensors
 int numdist = 0;                              // Counter for existing distance sensors
 int numdeg = 0;                               // Counter for existing degree sensors
+int numlight = 0;                             // Counter for existing light sensors
+int numaccel = 0;                             // Counter for acceleration sensors
+int nummag = 0;                               // Counter for magnet sensors
 
 float ENScortemp = -1;                        // Possible ENS160 correction via a measured temp
 float ENScorhum = -1;                         // Possible ENS160 correction via a measured humidity
@@ -101,8 +105,12 @@ uint16_t tvoc = -1;                           // Measured air quality
 uint16_t dist = -1;                           // Measured distance
 float press = -1;                             // Measured pressure
 float angle = -1;                             // Measured angle
+float light = -1;                             // Measured light
 String qual = "";                             // Quality of an measure
-
+String accel = "";                            // Measure acceration
+float X = 0;                                    // measured value for X 
+float Y = 0;                                    // measured value for Y
+float Z = 0;                                    // measured value for Z
 
 //#include <MySensors.h>
 
@@ -143,6 +151,9 @@ String qual = "";                             // Quality of an measure
 #if defined(enableBME28)                      // Temperature, humidity and barometric pressure sensor
   #include "MyBME280.h"
 #endif
+#if defined(enableBMP39)                      // Temperature and barometric pressure sensor
+  #include "MyBMP390.h"
+#endif
 #if defined(enableVL53L0)                     // TOFL sensor ca. 40 - 500
   #include "MyVL53L0X.h"
 #endif
@@ -152,8 +163,23 @@ String qual = "";                             // Quality of an measure
 #if defined(enableMLX)                        // Touchless temp sensor
   #include "MyMLX90614.h"
 #endif
-#if defined(enableAS56)                       // angle sensor 
+#if defined(enableAS56)                       // Angle sensor 
   #include "MyAS5600.h"
+#endif
+#if defined(enableBH17)                       // Light sensor 
+  #include "MyBH1750.h"
+#endif
+#if defined(enableVEML)                       // Light sensor 
+  #include "MyVEML7700.h"
+#endif
+#if defined(enableLISD)                       // Acceleration sensor 
+  #include "MyLIS3DH.h"
+#endif
+#if defined(enableLISM)                       // Magnet sensor 
+  #include "MyLIS3MDL.h"
+#endif
+#if defined(enableMPU65)
+  #include "MyMPU6500.h"                       // 6 axis sensor
 #endif
 
 ///////////////////////////////////////////////////////// Sensors ///////////////////////////////////
@@ -327,6 +353,7 @@ void callback(char* topic, uint8_t* payload, unsigned int length) {
       mqttclient.publish(out_param,   (String(Sendme).c_str()), false);       // Send the wifi signal strenght
       mqttclient.publish(out_sensors, (String(MySensors).c_str()), false);    // Send list of the usable sensors
       readvalues();
+      scanI2Cbus();                                                           // Also show bus devices on Serial
       break;
     }
     // Received from mqtt new update rate 
@@ -341,7 +368,13 @@ void callback(char* topic, uint8_t* payload, unsigned int length) {
       sendinterval = Va * 1000;
       break;
     }
-    // RESTART command 
+    // I2C Bus scan 
+    case 'O' : {                       // restart device
+      mqttclient.publish(out_status, "Serialprint I2C requested", false);
+      scanI2Cbus();
+      break;
+      }
+     // RESTART command 
     case 'X' : {                       // restart device
       mqttclient.publish(out_status, "Restart requested", false);
       RestartDevice();
@@ -374,7 +407,7 @@ void RestartDevice(){
 }
 
 void readvalues() {   
-  MySensors = "";
+  MySensors = "S: " + String(numsensors) + "-> ";
   #if defined(enableDHT)          // Sensor reading DHT
     readDHT();   
   #endif                 
@@ -414,7 +447,10 @@ void readvalues() {
   #if defined(enableBME28)
     readBME28();                  // Sensor reading BME280
   #endif
-  #if defined(enableVL53L0)
+  #if defined(enableBMP39)
+    readBMP39();                  // Sensor reading BMP280
+  #endif
+   #if defined(enableVL53L0)
     readVL53L0();                 // Sensor reading tofl VL53
   #endif
   #if defined(enableVL6180)
@@ -423,8 +459,22 @@ void readvalues() {
   #if defined(enableAS56)
     readAS56();                   // Sensor reading angle AS5600
   #endif
+  #if defined(enableBH17)
+    readBH17();                   // Sensor reading light BH1750
+  #endif  
+  #if defined(enableVEML)
+    readVEML();                   // Sensor reading light VEML7700
+  #endif
+  #if defined(enableLISD)
+    readLISD();                   // Sensor reading acceleration LIS3DH
+  #endif
+  #if defined(enableLISM)
+    readLISM();                   // Sensor reading magnet LIS3MDL
+  #endif
+  #if defined(enableMPU65)
+    readMPU65();                   // Sensor reading 6 axis MPU 6500 board
+  #endif
 }
-
 
 // Helper function for substring to hex conversion 
 int x2i(const char *s, int from_a, int to_b) {
@@ -433,6 +483,17 @@ int x2i(const char *s, int from_a, int to_b) {
   strncpy(temp, s + from_a, len);
   temp[len] = '\0';
   return (int)strtol(temp, nullptr, 16);
+}
+
+// Helper function to identify I2C devices
+void scanI2Cbus(){
+  Serial.print("\nI2C devices: \t");
+  for (uint8_t addr = 1; addr < 127; addr++) {
+    Wire.beginTransmission(addr);
+    if (Wire.endTransmission() == 0)
+      Serial.printf(" 0x%02X\t", addr);
+  }
+  Serial.print("\nNo more I2C devices:\n");
 }
 
 // XXXXXXXXXXXXXXXXXXXXXXXX PROGRAM  START XXXXXXXXXXXXXXXXXXXXXXX
@@ -463,14 +524,11 @@ void setup() {
 
   #if defined(enableWire)
     Wire.begin(SDA, SCL);
+    Wire.setTimeOut(200); 
     delay(500);
     Serial.println("Wire started");
-	#if defined(TEST)
-    for (uint8_t addr = 1; addr < 127; addr++) {
-      Wire.beginTransmission(addr);
-      if (Wire.endTransmission() == 0)
-        Serial.printf("Found I2C device at 0x%02X\n", addr);
-	  }
+	  #if defined(TEST)
+      scanI2Cbus();
     #endif
   #endif
   
@@ -504,14 +562,17 @@ void setup() {
   #if defined(enableSHT31)      // Initialize the SHT31 sensor
     startSHT31();
   #endif  
-  #if defined(enableBMP18)      // Initialize the ENS160 sensor
+  #if defined(enableBMP18)      // Initialize the BMP180 sensor
     startBMP18();
   #endif  
-  #if defined(enableBMP28)      // Initialize the ENS160 sensor
+  #if defined(enableBMP28)      // Initialize the BMP280 sensor
     startBMP28();
   #endif  
-  #if defined(enableBME28)      // Initialize the ENS160 sensor
+  #if defined(enableBME28)      // Initialize the BME280 sensor
     startBME28();
+  #endif
+  #if defined(enableBMP39)      // Initialize the BMP390 sensor
+    startBMP39();
   #endif
   #if defined(enableVL53L0)     // Initialize the VL53L0 sensor
     startVL53L0();
@@ -519,11 +580,29 @@ void setup() {
   #if defined(enableVL6180)     // Initialize the VL6180 sensor
     startVL6180();
   #endif
-  #if defined(enableAS56)
-    startAS56();                   // Sensor reading angle AS5600
+  #if defined(enableAS56)       // Initialize the AS5600 sensor
+    startAS56();                  
   #endif
-  Serial.printf("Sensors for Temp: %i, Humid: %i, Co2: %i, Tvoc: %i, Press: %i, Dist: %i, Angle: %i\n", numtemp, numhum, numco2, numtvoc, numpress, numdist, numdeg);
-  mqttclient.publish(out_sensors, (String(MySensors).c_str()), false);    // Send list of the usable sensors
+  #if defined(enableBH17)       // Initialize the BH1750 sensor
+    startBH17();     
+  #endif
+  #if defined(enableVEML)       // Initialize the VEML7700 sensor
+    startVEML();         
+  #endif
+  #if defined(enableLISD)       // Initialize the LIS3DH sensor
+    startLISD();              
+  #endif
+  #if defined(enableLISM)       // Initialize the LIS3MDL sensor
+    startLISM();                
+  #endif
+  #if defined(enableMPU65)       // Initialize the MPU 6050 board
+    startMPU65();                 
+  #endif
+
+  numsensors = numtemp + numhum + numco2 + numtvoc + numpress + numdist + numdeg + numlight + numaccel + nummag;
+  Serial.printf("\n%i Sensors for Temp: %i, Humid: %i, Co2: %i, Tvoc: %i, Press: %i, Dist: %i, Angle: %i, Light: %i, Acell.: %i Magn.: %i\n",
+                numsensors, numtemp, numhum, numco2, numtvoc, numpress, numdist, numdeg, numlight, numaccel, nummag);
+  mqttclient.publish(out_sensors, (String(MySensors).c_str()), false); // Send list of the usable sensors.
 }
 
 //  This is the Main loop

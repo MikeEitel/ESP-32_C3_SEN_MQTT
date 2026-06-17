@@ -73,7 +73,7 @@ void readBMP28(){
   String numh = String(BMP28mynumtemp-1);              
   String topic = String(mqtt_out_sen) + "/temp/" + numh;
   mqttclient.publish(topic.c_str(), String(temp).c_str(), false);
-  MySensors += "B28<t" + numh;
+  MySensors += "BM28<t" + numh;
 
   numh = String(BMP28mynumpress-1);              
   topic = String(mqtt_out_sen) + "/press/" + numh;

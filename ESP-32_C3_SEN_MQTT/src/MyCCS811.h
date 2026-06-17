@@ -10,8 +10,8 @@ int CSSmynumco2 = 0;
 int CSSmynumtvoc = 0;
 
 #include <DFRobot_CCS811.h>
-DFRobot_CCS811 ccs811;
-//#define I2C_ADDRESS 0x5A
+DFRobot_CCS811 ccs811(&Wire, 0x5B);
+//#define I2C_ADDRESS 0x5A (nc)-0x5A (VCC)-0x5B
 
 void startCSS(){
   int status, tried = 0;
@@ -47,11 +47,11 @@ void readCCS() {
     String numh = String(CSSmynumco2 -1);              
     String topic = String(mqtt_out_sen) + "/co2/" + numh;
     mqttclient.publish(topic.c_str(), String(co2).c_str(), false);
-    MySensors += "CSS<co" + numh;
+    MySensors += "CSS<c" + numh;
     numh = String(CSSmynumtvoc -1);              
     topic = String(mqtt_out_sen) + "/tvoc/" + numh;
     mqttclient.publish(topic.c_str(), String(tvoc).c_str(), false);
-    MySensors += "tv" + numh + "> ";
+    MySensors += "v" + numh + "> ";
   }
   else { 
     #if defined(TEST)

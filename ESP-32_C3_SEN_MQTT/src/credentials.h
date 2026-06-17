@@ -58,20 +58,29 @@ IPAddress gateway(1,1,1,1);                // REPLACE !!!!
 
 #define enableDHT                                       // Enable DHT T&H sensor      
 #define enableDS                                        // Enable multiple DS18 T sensors      
-#define enableLM75                                      // Enable LM75 T sensor  
-#define enableAHT                                       // Enable AHT21 T&H sensor  
-#define enableSHT31                                     // Enable SHT31 T&H sensor  #define enableMLX                                       // Enable MLX90614 nontouch T sensor
-#define enableAGS10                                     // Enable AGS10 tvoc sensor  
-#define enableCCS                                       // Enable CCS811 tvoc sensor  
-#define enableENS                                       // Enable ENS160 tvoc sensor  
-//#define enableSGP30                                     // Enable SPG30 tvoc sensor  
-#define enableBMP18                                     // Enable BMP180 T & Baropress sensor  
-//#define enableBMP28   // EITHER BMP 280                 // Enable BMP280 T & Baropress sensor  
-#define enableBME28   // OR BME 280                     // Enable BME280 T&H & Baropress sensor  
-#define enableVL53L0                                    // Enable LV53L0X tofl sensor
-//#define enableVL6180                                    // Enable VL6180X tofl sensor
-#define enableAS56                                      // Enable AS5600 angle sensor
+#define enableLM75                                      // I2C_ADDRESS 0x48   Enable LM75 T sensor  
+#define enableAHT                                       // I2C_ADDRESS 0x38   Enable AHT21 T&H sensor  
+#define enableSHT31                                     // I2C_ADDRESS 0x44   Enable SHT31 T&H sensor  
+#define enableMLX                                       // I2C_ADDRESS 0x5A   Enable MLX90614 nontouch T sensor
+#define enableAGS10                                     // I2C_ADDRESS 0x1A   Enable AGS10 tvoc sensor  
+#define enableCCS                                       // I2C_ADDRESS (nc)-0x5A (VCC)-0x5B   Enable CCS811 tvoc sensor  
+//#define enableENS                                       // I2C_ADDRESS 0x53   Enable ENS160 tvoc sensor  
+//#define enableSGP30                                     // I2C_ADDRESS 0x58   Enable SPG30 tvoc sensor  ATTENTION !!! SENSIBLE TO BUS LOAD
+//#define enableBMP18   // EITHER BMP/E-3xx               // I2C_ADDRESS 0x77   Enable BMP180 T & Baropress sensor  
+#define enableBMP39   // OR BMP 180                     // I2C_ADDRESS 0x77   Enable BMP/E-3XX T&H & Baropress sensor  
+//#define enableBMP28   // EITHER BMP 280                 // I2C_ADDRESS 0x76   Enable BMP280 T & Baropress sensor  
+#define enableBME28   // OR BME 280                     // I2C_ADDRESS 0x76   Enable BME280 T&H & Baropress sensor  
+#define enableVL53L0                                    // I2C_ADDRESS 0x29   Enable LV53L0X tofl sensor
+//#define enableVL6180  // EITHER AS5600                  // I2C_ADDRESS 0x36   Enable VL6180X tofl sensor
+#define enableAS56    // OR VL6180                      // I2C_ADDRESS 0x36   Enable AS5600 angle sensor
+#define enableBH17                                      // I2C_ADDRESS (nc)-0x23 (VCC)-0x5C   Light sensor BH1750                     
+#define enableVEML                                      // I2C_ADDRESS 0x10   Light sensor VEML7700
+#define enableMPU65                                     // I2C_ADDRESS (nc)-0x68 (VCC)-0x69  6 axis sensor board MPU6500
 
+// Not succesfull tested
+//#define enableLISM                                      // I2C_ADDRESS 0x1C  Enable magnet sensor LIS3MDL
+//#define enableLISD                                      // I2C_ADDRESS 0x19  Enable acceleration sensor LIS3DTHR
+//
 
 float humDHTcorr =        0.0;                          // Humidity DHT sensor error correction
 float humAHTcorr =        0.0;                          // Humidity AHT sensor error correction
